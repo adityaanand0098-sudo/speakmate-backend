@@ -13,7 +13,7 @@ async function hfChat(prompt) {
   if (!apiKey) throw new Error("HF_KEY missing");
 
   const response = await fetch(
-    "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+    "https://api-inference.huggingface.co/models/bigscience/bloomz-560m",
     {
       method: "POST",
       headers: {
@@ -31,7 +31,6 @@ async function hfChat(prompt) {
 
   const data = await response.json();
 
-  // HuggingFace kabhi array deta hai, kabhi object
   if (Array.isArray(data)) {
     return data[0]?.generated_text || "No reply";
   } else if (data.generated_text) {
@@ -64,7 +63,7 @@ app.post("/chat", async (req, res) => {
 
 // ---- Root Route ----
 app.get("/", (req, res) => {
-  res.send("SpeakMate backend (Falcon-7B-Instruct) is running!");
+  res.send("SpeakMate backend (Bloomz-560m) is running!");
 });
 
 // ---- Start Server ----

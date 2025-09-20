@@ -13,7 +13,7 @@ async function hfChat(prompt) {
   if (!apiKey) throw new Error("HF_KEY missing");
 
   const response = await fetch(
-    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct",
+    "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
     {
       method: "POST",
       headers: {
@@ -30,7 +30,15 @@ async function hfChat(prompt) {
   }
 
   const data = await response.json();
-  return data[0]?.generated_text || "No reply";
+
+  // HuggingFace kabhi array deta hai, kabhi object
+  if (Array.isArray(data)) {
+    return data[0]?.generated_text || "No reply";
+  } else if (data.generated_text) {
+    return data.generated_text;
+  } else {
+    return JSON.stringify(data);
+  }
 }
 
 // ---- Chat Endpoint ----
@@ -40,8 +48,8 @@ app.post("/chat", async (req, res) => {
 
     const systemPrompt = `You are an English tutor. 
     The user speaks ${userLang}. 
-    Reply first in English, then give the translation in ${userLang}. 
-    Keep replies simple and clear for learners.`;
+    Always reply first in simple English, then give the translation in ${userLang}. 
+    Example: "I'm fine. (मैं ठीक हूँ)"`;
 
     const reply = await hfChat(
       `${systemPrompt}\n\nUser: ${message}\nAssistant:`
@@ -56,7 +64,7 @@ app.post("/chat", async (req, res) => {
 
 // ---- Root Route ----
 app.get("/", (req, res) => {
-  res.send("SpeakMate backend (HuggingFace) is running!");
+  res.send("SpeakMate backend (Falcon-7B-Instruct) is running!");
 });
 
 // ---- Start Server ----

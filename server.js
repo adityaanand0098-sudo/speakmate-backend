@@ -7,33 +7,30 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// ---- DeepSeek Chat Function ----
-async function deepseekChat(messages, max_tokens = 500) {
-  const apiKey = process.env.DEEPSEEK_KEY;
-  if (!apiKey) throw new Error("DEEPSEEK_KEY missing");
+// ---- HuggingFace Chat Function ----
+async function hfChat(prompt) {
+  const apiKey = process.env.HF_KEY;
+  if (!apiKey) throw new Error("HF_KEY missing");
 
-  const body = {
-    model: "deepseek-chat",
-    messages,
-    max_tokens
-  };
+  const response = await fetch(
+    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ inputs: prompt })
+    }
+  );
 
-  const resp = await fetch("https://api.deepseek.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!resp.ok) {
-    const errorText = await resp.text();
-    throw new Error(`DeepSeek API error: ${errorText}`);
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`HF API error: ${err}`);
   }
 
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || "No reply";
+  const data = await response.json();
+  return data[0]?.generated_text || "No reply";
 }
 
 // ---- Chat Endpoint ----
@@ -41,15 +38,16 @@ app.post("/chat", async (req, res) => {
   try {
     const { message, userLang } = req.body;
 
-    const systemPrompt = `You are an English learning assistant. The user speaks ${userLang}. 
-    Reply in English and also provide the translation in ${userLang}.`;
+    const systemPrompt = `You are an English tutor. 
+    The user speaks ${userLang}. 
+    Reply first in English, then give the translation in ${userLang}. 
+    Keep replies simple and clear for learners.`;
 
-    const assistantText = await deepseekChat([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: message }
-    ], 500);
+    const reply = await hfChat(
+      `${systemPrompt}\n\nUser: ${message}\nAssistant:`
+    );
 
-    res.json({ reply: assistantText });
+    res.json({ reply });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error", detail: err.message });
@@ -58,7 +56,7 @@ app.post("/chat", async (req, res) => {
 
 // ---- Root Route ----
 app.get("/", (req, res) => {
-  res.send("SpeakMate backend (DeepSeek) is running!");
+  res.send("SpeakMate backend (HuggingFace) is running!");
 });
 
 // ---- Start Server ----

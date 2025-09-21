@@ -13,7 +13,7 @@ async function hfChat(prompt) {
   if (!apiKey) throw new Error("HF_KEY missing");
 
   const response = await fetch(
-    "https://api-inference.huggingface.co/models/microsoft/DialoGPT-small",
+    "https://api-inference.huggingface.co/models/bigscience/bloom",
     {
       method: "POST",
       headers: {
@@ -45,8 +45,8 @@ app.post("/chat", async (req, res) => {
   try {
     const { message, userLang } = req.body;
 
-    const systemPrompt = `You are an English tutor. 
-    Reply in simple English and also give translation in ${userLang}. 
+    const systemPrompt = `You are an English tutor.
+    Reply in simple English, then also give translation in ${userLang}.
     Example: "I am fine. (मैं ठीक हूँ)"`;
 
     const reply = await hfChat(
@@ -62,7 +62,7 @@ app.post("/chat", async (req, res) => {
 
 // ---- Root Route ----
 app.get("/", (req, res) => {
-  res.send("SpeakMate backend (DialoGPT-small) is running!");
+  res.send("SpeakMate backend (Bloom) is running!");
 });
 
 // ---- Start Server ----

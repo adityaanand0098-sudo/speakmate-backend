@@ -1,4 +1,4 @@
-  import express from "express";
+import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import cors from "cors";
@@ -13,7 +13,7 @@ async function hfChat(prompt) {
   if (!apiKey) throw new Error("HF_KEY missing");
 
   const response = await fetch(
-    "https://api-inference.huggingface.co/models/google/flan-t5-base",
+    "https://api-inference.huggingface.co/models/microsoft/DialoGPT-small",
     {
       method: "POST",
       headers: {
@@ -33,8 +33,8 @@ async function hfChat(prompt) {
 
   if (Array.isArray(data)) {
     return data[0]?.generated_text || "No reply";
-  } else if (data[0]?.output_text) {
-    return data[0].output_text;
+  } else if (data.generated_text) {
+    return data.generated_text;
   } else {
     return JSON.stringify(data);
   }
@@ -46,7 +46,7 @@ app.post("/chat", async (req, res) => {
     const { message, userLang } = req.body;
 
     const systemPrompt = `You are an English tutor. 
-    Reply to the user in simple English and also give a translation in ${userLang}.
+    Reply in simple English and also give translation in ${userLang}. 
     Example: "I am fine. (मैं ठीक हूँ)"`;
 
     const reply = await hfChat(
@@ -62,7 +62,7 @@ app.post("/chat", async (req, res) => {
 
 // ---- Root Route ----
 app.get("/", (req, res) => {
-  res.send("SpeakMate backend (Flan-T5-Base) is running!");
+  res.send("SpeakMate backend (DialoGPT-small) is running!");
 });
 
 // ---- Start Server ----
